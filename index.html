@@ -23,9 +23,13 @@
 
     </main>
 
-    <div class="container-none p-2 flex justify-center fixed bottom-0 inset-x-0 z-30">
-        <button class="m-2 p-1 px-3 bg-white rounded-xl">&larr;</button>
-        <button class="m-2 p-1 px-3 bg-white rounded-xl">&rarr;</button>
+    <div class="container-none p-2 flex justify-center bottom-0 inset-x-0 z-30">
+        <button class="m-2 p-1 px-3 bg-white rounded-xl" onclick="backPage()">&larr;</button>
+        <button class="m-2 p-1 px-3 bg-white rounded-xl" onclick="nextPage()">&rarr;</button>
+    </div>
+
+    <div class="z-50 fixed inset-x-0 inset-y-0 w-none hidden justify-center" id="loading">
+        <img class="w-full" src="./assets/img/gifPokemon.gif" alt="loading...">
     </div>
 
     <script src="./scripts/app.js"></script>

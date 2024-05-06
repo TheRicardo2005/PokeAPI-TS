@@ -1,4 +1,5 @@
 const main: HTMLElement = document.querySelector("#main");
+const loading: HTMLElement = document.querySelector('#loading');
 
 interface PokemonDetails {
     name: string;
@@ -37,19 +38,19 @@ const backGroundType : { [key: string]: string } = {
     "normal": "bg-gray-300",
     "fire": "bg-orange-300",
     "water": "bg-blue-300",
-    "electric": "bg-yellow-400",
+    "electric": "bg-yellow-300",
     "grass": "bg-green-300",
     "ice": "bg-blue-200",
-    "fighting": "bg-red-700",
-    "poison": "bg-purple-500",
-    "ground": "bg-yellow-800",
+    "fighting": "bg-red-400",
+    "poison": "bg-purple-300",
+    "ground": "bg-yellow-500",
     "flying": "bg-blue-300",
-    "psychic": "bg-purple-300",
-    "bug": "bg-green-600",
+    "psychic": "bg-purple-200",
+    "bug": "bg-lime-200",
     "rock": "bg-gray-600",
-    "ghost": "bg-indigo-600",
-    "dragon": "bg-blue-800",
-    "dark": "bg-black",
+    "ghost": "bg-violet-600",
+    "dragon": "bg-indigo-500",
+    "dark": "bg-neutral-700",
     "steel": "bg-gray-400",
     "fairy": "bg-pink-300"
 }
@@ -98,7 +99,8 @@ const fetchData = (url: string): Promise<any> => {
         });
 };
 
-const baseUrl: string = 'https://pokeapi.co/api/v2/pokemon';
+let countPagination:number = 1;
+const baseUrl: string = `https://pokeapi.co/api/v2/pokemon?offset=0&limit=none`;
 
 fetchData(baseUrl)
     .then((data: { results: { url: string }[] }) => {
@@ -152,3 +154,80 @@ fetchData(baseUrl)
         console.error(`Error al obtener los datos: ${error}`);
     });
     
+//Pagination
+function backPage(){
+    if(countPagination > 1) {
+        countPagination = countPagination - 1;
+        fetchData(`https://pokeapi.co/api/v2/pokemon?offset=${(countPagination - 1) * 20}&limit=20`)
+            .then((data: { results: { url: string }[] }) => {
+                console.log('Pokemons obtenidos:', data.results);
+                main.innerHTML = ""; // Limpiar el contenido anterior
+                renderPokemon(data.results);
+            })
+            .catch((error: Error) => {
+                console.error(`Error al obtener los datos: ${error}`);
+            });
+    }
+}
+
+function nextPage(){
+    countPagination = countPagination + 1;
+    fetchData(`https://pokeapi.co/api/v2/pokemon?offset=${(countPagination - 1) * 20}&limit=20`)
+        .then((data: { results: { url: string }[] }) => {
+            console.log('Pokemons obtenidos:', data.results);
+            main.innerHTML = ""; // Limpiar el contenido anterior
+            renderPokemon(data.results);
+        })
+        .catch((error: Error) => {
+            console.error(`Error al obtener los datos: ${error}`);
+        });
+}
+
+function renderPokemon(results: { url: string }[]) {
+    const pokemonDetailPromises: Promise<any>[] = results.map((pokemon: { url: string }) => fetchData(pokemon.url));
+
+    Promise.all(pokemonDetailPromises)
+        .then((pokemonDetails: any[]) => {
+            const processedPokemonDetails: PokemonDetails[] = pokemonDetails.map((pokemonDetail) => {
+                let sprite = pokemonDetail.sprites.front_default;
+                if (pokemonDetail.sprites.other && pokemonDetail.sprites.other['official-artwork']) {
+                    sprite = pokemonDetail.sprites.other['official-artwork'].front_default;
+                }
+                const types: string[] = pokemonDetail.types.map((typeObj: { type: { name: string } }) => typeObj.type.name);
+                return {
+                    name: pokemonDetail.name,
+                    sprite: sprite,
+                    types: types
+                };
+            });
+
+            processedPokemonDetails.forEach((pokemon: PokemonDetails) => {
+                main.innerHTML += `
+                <div class="max-w-sm rounded-md overflow-hidden shadow-lg relative bg-white">
+                    <div class="absolute w-24 md:w-32 lg:w-44 h-24 md:h-32 lg:h-48 ${addBgColor(pokemon.types[0])} blur-md rounded-full inset-x-10 inset-y-10 z-10"></div>
+                    <img class="w-full z-20 relative hover:scale-105" src="${pokemon.sprite}" alt="${pokemon.name}">
+                    <h3 class="text-center text-lg">${pokemon.name}</h3>
+                    <div class="flex justify-around my-3 font-semibold text-white">
+                        ${pokemon.types.map(
+                            (type: string) =>
+                                `<div class="rounded-md p-2 ${getTypeClass(type)}">${translateType(type)}</div>`
+                            ).join('')
+                        }
+                    </div>
+                </div>`;
+            });
+        })
+        .catch((error: Error) => {
+            console.error(`Error al obtener los datos: ${error}`);
+        });
+}
+
+// Inicializar la página
+fetchData(`https://pokeapi.co/api/v2/pokemon?offset=0&limit=20`)
+    .then((data: { results: { url: string }[] }) => {
+        console.log('Pokemons obtenidos:', data.results);
+        renderPokemon(data.results);
+    })
+    .catch((error: Error) => {
+        console.error(`Error al obtener los datos: ${error}`);
+    });
